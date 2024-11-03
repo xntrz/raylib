@@ -426,14 +426,14 @@ void DrawSphereEx(Vector3 centerPos, float radius, int rings, int slices, Color 
 {
 #if 0
     // Basic implementation, do not use it!
-    // For a sphere with 16 rings and 16 slices it requires 8640 cos()/sin() function calls!
+    // For a sphere with 16 rings and 16 slices it requires 8640 cos()/sin() function calls! 
     // New optimized version below only requires 4 cos()/sin() calls
-
+    
     rlPushMatrix();
         // NOTE: Transformation is applied in inverse order (scale -> translate)
         rlTranslatef(centerPos.x, centerPos.y, centerPos.z);
         rlScalef(radius, radius, radius);
-
+        
         rlBegin(RL_TRIANGLES);
             rlColor4ub(color.r, color.g, color.b, color.a);
 
@@ -488,7 +488,7 @@ void DrawSphereEx(Vector3 centerPos, float radius, int rings, int slices, Color 
 
             for (int i = 0; i < rings + 1; i++)
             {
-                for (int j = 0; j < slices; j++)
+                for (int j = 0; j < slices; j++) 
                 {
                     vertices[0] = vertices[2]; // Rotate around y axis to set up vertices for next face
                     vertices[1] = vertices[3];
@@ -1108,7 +1108,7 @@ Model LoadModel(const char *fileName)
 #endif
 
     // Make sure model transform is set to identity matrix!
-    model.transform = MatrixIdentity();
+    model.transform = xMatrixIdentity();
 
     if ((model.meshCount != 0) && (model.meshes != NULL))
     {
@@ -1139,7 +1139,7 @@ Model LoadModelFromMesh(Mesh mesh)
 {
     Model model = { 0 };
 
-    model.transform = MatrixIdentity();
+    model.transform = xMatrixIdentity();
 
     model.meshCount = 1;
     model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));
@@ -1165,7 +1165,7 @@ bool IsModelValid(Model model)
         (model.meshMaterial != NULL) &&     // Validate mesh-material linkage
         (model.meshCount > 0) &&            // Validate mesh count
         (model.materialCount > 0)) result = true; // Validate material count
-
+        
     // NOTE: Many elements could be validated from a model, including every model mesh VAO/VBOs
     // but some VBOs could not be used, it depends on Mesh vertex data
     for (int i = 0; i < model.meshCount; i++)
@@ -1179,7 +1179,7 @@ bool IsModelValid(Model model)
         if ((model.meshes[i].indices != NULL) && (model.meshes[i].vboId[6] == 0)) { result = false; break; }  // Vertex indices buffer not uploaded to GPU
         if ((model.meshes[i].boneIds != NULL) && (model.meshes[i].vboId[7] == 0)) { result = false; break; }  // Vertex boneIds buffer not uploaded to GPU
         if ((model.meshes[i].boneWeights != NULL) && (model.meshes[i].vboId[8] == 0)) { result = false; break; }  // Vertex boneWeights buffer not uploaded to GPU
-
+            
         // NOTE: Some OpenGL versions do not support VAO, so we don't check it
         //if (model.meshes[i].vaoId == 0) { result = false; break }
     }
@@ -1362,7 +1362,7 @@ void UploadMesh(Mesh *mesh, bool dynamic)
 #ifdef RL_SUPPORT_MESH_GPU_SKINNING
     if (mesh->boneIds != NULL)
     {
-        // Enable vertex attribute: boneIds (shader-location = 7)
+        // Enable vertex attribute: boneIds (shader-location = 6)
         mesh->vboId[RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS] = rlLoadVertexBuffer(mesh->boneIds, mesh->vertexCount*4*sizeof(unsigned char), dynamic);
         rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS, 4, RL_UNSIGNED_BYTE, 0, 0, 0);
         rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS);
@@ -1375,10 +1375,10 @@ void UploadMesh(Mesh *mesh, bool dynamic)
         rlSetVertexAttributeDefault(RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS, value, SHADER_ATTRIB_VEC4, 4);
         rlDisableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS);
     }
-
+    
     if (mesh->boneWeights != NULL)
     {
-        // Enable vertex attribute: boneWeights (shader-location = 8)
+        // Enable vertex attribute: boneWeights (shader-location = 7)
         mesh->vboId[RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS] = rlLoadVertexBuffer(mesh->boneWeights, mesh->vertexCount*4*sizeof(float), dynamic);
         rlSetVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS, 4, RL_FLOAT, 0, 0, 0);
         rlEnableVertexAttribute(RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS);
@@ -1483,9 +1483,9 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
     // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
+    Matrix matModel = xMatrixIdentity();
     Matrix matView = rlGetMatrixModelview();
-    Matrix matModelView = MatrixIdentity();
+    Matrix matModelView = xMatrixIdentity();
     Matrix matProjection = rlGetMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
@@ -1495,20 +1495,20 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     // Accumulate several model transformations:
     //    transform: model transformation provided (includes DrawModel() params combined with model.transform)
     //    rlGetMatrixTransform(): rlgl internal transform matrix due to push/pop matrix stack
-    matModel = MatrixMultiply(transform, rlGetMatrixTransform());
+    matModel = xMatrixMultiply(transform, rlGetMatrixTransform());
 
     // Model transformation matrix is sent to shader uniform location: SHADER_LOC_MATRIX_MODEL
     if (material.shader.locs[SHADER_LOC_MATRIX_MODEL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_MODEL], matModel);
 
     // Get model-view matrix
-    matModelView = MatrixMultiply(matModel, matView);
+    matModelView = xMatrixMultiply(matModel, matView);
 
     // Upload model normal matrix (if locations available)
     if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
 
 #ifdef RL_SUPPORT_MESH_GPU_SKINNING
-    // Upload Bone Transforms
-    if ((material.shader.locs[SHADER_LOC_BONE_MATRICES] != -1) && mesh.boneMatrices)
+    // Upload Bone Transforms    
+    if (material.shader.locs[SHADER_LOC_BONE_MATRICES] != -1 && mesh.boneMatrices)
     {
         rlSetUniformMatrices(material.shader.locs[SHADER_LOC_BONE_MATRICES], mesh.boneMatrices, mesh.boneCount);
     }
@@ -1600,7 +1600,7 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
             rlSetVertexAttribute(material.shader.locs[SHADER_LOC_VERTEX_BONEIDS], 4, RL_UNSIGNED_BYTE, 0, 0, 0);
             rlEnableVertexAttribute(material.shader.locs[SHADER_LOC_VERTEX_BONEIDS]);
         }
-
+        
         // Bind mesh VBO data: vertex bone weights (shader-location = 7, if available)
         if (material.shader.locs[SHADER_LOC_VERTEX_BONEWEIGHTS] != -1)
         {
@@ -1619,13 +1619,13 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     for (int eye = 0; eye < eyeCount; eye++)
     {
         // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection = MatrixIdentity();
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
+        Matrix matModelViewProjection = xMatrixIdentity();
+        if (eyeCount == 1) matModelViewProjection = xMatrixMultiply(matModelView, matProjection);
         else
         {
             // Setup current eye viewport (half screen width)
             rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
+            matModelViewProjection = xMatrixMultiply(xMatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
         }
 
         // Send combined model-view-projection matrix to shader
@@ -1710,9 +1710,9 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
     // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
+    Matrix matModel = xMatrixIdentity();
     Matrix matView = rlGetMatrixModelview();
-    Matrix matModelView = MatrixIdentity();
+    Matrix matModelView = xMatrixIdentity();
     Matrix matProjection = rlGetMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
@@ -1747,19 +1747,19 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
 
     // Accumulate internal matrix transform (push/pop) and view matrix
     // NOTE: In this case, model instance transformation must be computed in the shader
-    matModelView = MatrixMultiply(rlGetMatrixTransform(), matView);
+    matModelView = xMatrixMultiply(rlGetMatrixTransform(), matView);
 
     // Upload model normal matrix (if locations available)
     if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
-
+    
 #ifdef RL_SUPPORT_MESH_GPU_SKINNING
-    // Upload Bone Transforms
-    if ((material.shader.locs[SHADER_LOC_BONE_MATRICES] != -1) && mesh.boneMatrices)
+    // Upload Bone Transforms    
+    if (material.shader.locs[SHADER_LOC_BONE_MATRICES] != -1 && mesh.boneMatrices)
     {
         rlSetUniformMatrices(material.shader.locs[SHADER_LOC_BONE_MATRICES], mesh.boneMatrices, mesh.boneCount);
     }
 #endif
-
+    
     //-----------------------------------------------------
 
     // Bind active texture maps (if available)
@@ -1845,7 +1845,7 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
             rlSetVertexAttribute(material.shader.locs[SHADER_LOC_VERTEX_BONEIDS], 4, RL_UNSIGNED_BYTE, 0, 0, 0);
             rlEnableVertexAttribute(material.shader.locs[SHADER_LOC_VERTEX_BONEIDS]);
         }
-
+        
         // Bind mesh VBO data: vertex bone weights (shader-location = 7, if available)
         if (material.shader.locs[SHADER_LOC_VERTEX_BONEWEIGHTS] != -1)
         {
@@ -1864,13 +1864,13 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
     for (int eye = 0; eye < eyeCount; eye++)
     {
         // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection = MatrixIdentity();
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
+        Matrix matModelViewProjection = xMatrixIdentity();
+        if (eyeCount == 1) matModelViewProjection = xMatrixMultiply(matModelView, matProjection);
         else
         {
             // Setup current eye viewport (half screen width)
             rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
+            matModelViewProjection = xMatrixMultiply(xMatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
         }
 
         // Send combined model-view-projection matrix to shader
@@ -2205,7 +2205,7 @@ bool IsMaterialValid(Material material)
 
     if ((material.maps != NULL) &&      // Validate material contain some map
         (material.shader.id > 0)) result = true; // Validate material shader is valid
-
+        
     // TODO: Check if available maps contain loaded textures
 
     return result;
@@ -2364,27 +2364,24 @@ void UpdateModelAnimation(Model model, ModelAnimation anim, int frame)
     }
 }
 
-// Update model animated bones transform matrices for a given frame
-// NOTE: Updated data is not uploaded to GPU but kept at model.meshes[i].boneMatrices[boneId],
-// to be uploaded to shader at drawing, in case GPU skinning is enabled
-void UpdateModelAnimationBones(Model model, ModelAnimation anim, int frame)
+void UpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int frame)
 {
     if ((anim.frameCount > 0) && (anim.bones != NULL) && (anim.framePoses != NULL))
     {
-        if (frame >= anim.frameCount) frame = frame%anim.frameCount;
-
+        if (frame >= anim.frameCount) frame = frame%anim.frameCount;    
+    
         for (int i = 0; i < model.meshCount; i++)
         {
             if (model.meshes[i].boneMatrices)
             {
                 assert(model.meshes[i].boneCount == anim.boneCount);
-
+              
                 for (int boneId = 0; boneId < model.meshes[i].boneCount; boneId++)
                 {
                     Vector3 inTranslation = model.bindPose[boneId].translation;
                     Quaternion inRotation = model.bindPose[boneId].rotation;
                     Vector3 inScale = model.bindPose[boneId].scale;
-
+                    
                     Vector3 outTranslation = anim.framePoses[frame][boneId].translation;
                     Quaternion outRotation = anim.framePoses[frame][boneId].rotation;
                     Vector3 outScale = anim.framePoses[frame][boneId].scale;
@@ -2395,15 +2392,15 @@ void UpdateModelAnimationBones(Model model, ModelAnimation anim, int frame)
 
                     Vector3 boneTranslation = Vector3Add(
                         Vector3RotateByQuaternion(Vector3Multiply(outScale, invTranslation),
-                        outRotation), outTranslation);
+                        outRotation), outTranslation); 
                     Quaternion boneRotation = QuaternionMultiply(outRotation, invRotation);
                     Vector3 boneScale = Vector3Multiply(outScale, invScale);
-
-                    Matrix boneMatrix = MatrixMultiply(MatrixMultiply(
+                    
+                    Matrix boneMatrix = xMatrixMultiply(xMatrixMultiply(
                         QuaternionToMatrix(boneRotation),
                         MatrixTranslate(boneTranslation.x, boneTranslation.y, boneTranslation.z)),
                         MatrixScale(boneScale.x, boneScale.y, boneScale.z));
-
+                    
                     model.meshes[i].boneMatrices[boneId] = boneMatrix;
                 }
             }
@@ -2820,7 +2817,6 @@ Mesh GenMeshSphere(float radius, int rings, int slices)
 
     if ((rings >= 3) && (slices >= 3))
     {
-        par_shapes_set_epsilon_degenerate_sphere(0.0);
         par_shapes_mesh *sphere = par_shapes_create_parametric_sphere(slices, rings);
         par_shapes_scale(sphere, radius, radius, radius);
         // NOTE: Soft normals are computed internally
@@ -3749,10 +3745,10 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
     Matrix matRotation = MatrixRotate(rotationAxis, rotationAngle*DEG2RAD);
     Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
 
-    Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+    Matrix matTransform = xMatrixMultiply(xMatrixMultiply(matScale, matRotation), matTranslation);
 
     // Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
-    model.transform = MatrixMultiply(model.transform, matTransform);
+    model.transform = xMatrixMultiply(model.transform, matTransform);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -4240,7 +4236,7 @@ static Model LoadOBJ(const char *fileName)
     unsigned int objMaterialCount = 0;
 
     Model model = { 0 };
-    model.transform = MatrixIdentity();
+    model.transform = xMatrixIdentity();
 
     char* fileText = LoadFileText(fileName);
 
@@ -4828,15 +4824,15 @@ static Model LoadIQM(const char *fileName)
     }
 
     BuildPoseFromParentJoints(model.bones, model.boneCount, model.bindPose);
-
+    
     for (int i = 0; i < model.meshCount; i++)
     {
         model.meshes[i].boneCount = model.boneCount;
         model.meshes[i].boneMatrices = RL_CALLOC(model.meshes[i].boneCount, sizeof(Matrix));
-
+        
         for (int j = 0; j < model.meshes[i].boneCount; j++)
         {
-            model.meshes[i].boneMatrices[j] = MatrixIdentity();
+            model.meshes[i].boneMatrices[j] = xMatrixIdentity();
         }
     }
 
@@ -5248,7 +5244,7 @@ static Model LoadGLTF(const char *fileName)
     ***********************************************************************************************/
 
     // Macro to simplify attributes loading code
-    #define LOAD_ATTRIBUTE(accesor, numComp, srcType, dstPtr) LOAD_ATTRIBUTE_CAST(accesor, numComp, srcType, dstPtr, srcType)
+    #define LOAD_ATTRIBUTE(accesor, numComp, srcType, dstPtr) LOAD_ATTRIBUTE_CAST(accesor, numComp, srcType, dstPtr, srcType) 
 
     #define LOAD_ATTRIBUTE_CAST(accesor, numComp, srcType, dstPtr, dstType) \
     { \
@@ -5736,7 +5732,7 @@ static Model LoadGLTF(const char *fileName)
 
                         TRACELOG(LOG_WARNING, "MODEL: [%s] Indices data converted from u32 to u16, possible loss of data", fileName);
                     }
-                    else
+                    else 
                     {
                         TRACELOG(LOG_WARNING, "MODEL: [%s] Indices data format not supported, use u16", fileName);
                     }
@@ -5924,14 +5920,14 @@ static Model LoadGLTF(const char *fileName)
                 {
                     memcpy(model.meshes[meshIndex].animNormals, model.meshes[meshIndex].normals, model.meshes[meshIndex].vertexCount*3*sizeof(float));
                 }
-
+                
                 // Bone Transform Matrices
                 model.meshes[meshIndex].boneCount = model.boneCount;
                 model.meshes[meshIndex].boneMatrices = RL_CALLOC(model.meshes[meshIndex].boneCount, sizeof(Matrix));
-
+                
                 for (int j = 0; j < model.meshes[meshIndex].boneCount; j++)
                 {
-                    model.meshes[meshIndex].boneMatrices[j] = MatrixIdentity();
+                    model.meshes[meshIndex].boneMatrices[j] = xMatrixIdentity();
                 }
 
                 meshIndex++;       // Move to next mesh
@@ -6249,7 +6245,7 @@ static ModelAnimation *LoadModelAnimationsGLTF(const char *fileName, int *animCo
                 RL_FREE(boneChannels);
             }
         }
-
+        
         if (data->skins_count > 1)
         {
             TRACELOG(LOG_WARNING, "MODEL: [%s] expected exactly one skin to load animation data from, but found %i", fileName, data->skins_count);
@@ -6303,7 +6299,7 @@ static Model LoadVOX(const char *fileName)
     }
 
     // Build models from meshes
-    model.transform = MatrixIdentity();
+    model.transform = xMatrixIdentity();
 
     model.meshCount = meshescount;
     model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));
@@ -6705,12 +6701,12 @@ static Model LoadM3D(const char *fileName)
             {
                 memcpy(model.meshes[i].animVertices, model.meshes[i].vertices, model.meshes[i].vertexCount*3*sizeof(float));
                 memcpy(model.meshes[i].animNormals, model.meshes[i].normals, model.meshes[i].vertexCount*3*sizeof(float));
-
+                
                 model.meshes[i].boneCount = model.boneCount;
                 model.meshes[i].boneMatrices = RL_CALLOC(model.meshes[i].boneCount, sizeof(Matrix));
                 for (j = 0; j < model.meshes[i].boneCount; j++)
                 {
-                    model.meshes[i].boneMatrices[j] = MatrixIdentity();
+                    model.meshes[i].boneMatrices[j] = xMatrixIdentity();
                 }
             }
         }

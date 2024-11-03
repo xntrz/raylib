@@ -161,8 +161,8 @@
 __declspec(dllimport) unsigned long __stdcall GetModuleFileNameA(void *hModule, void *lpFilename, unsigned long nSize);
 __declspec(dllimport) unsigned long __stdcall GetModuleFileNameW(void *hModule, void *lpFilename, unsigned long nSize);
 __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int cp, unsigned long flags, void *widestr, int cchwide, void *str, int cbmb, void *defchar, int *used_default);
-__declspec(dllimport) unsigned int __stdcall timeBeginPeriod(unsigned int uPeriod);
-__declspec(dllimport) unsigned int __stdcall timeEndPeriod(unsigned int uPeriod);
+unsigned int __stdcall timeBeginPeriod(unsigned int uPeriod);
+unsigned int __stdcall timeEndPeriod(unsigned int uPeriod);
 #elif defined(__linux__)
     #include <unistd.h>
 #elif defined(__FreeBSD__)
@@ -513,22 +513,23 @@ const char *TextFormat(const char *text, ...);              // Formatting of tex
 #endif
 
 // Include platform-specific submodules
-#if defined(PLATFORM_DESKTOP_GLFW)
-    #include "platforms/rcore_desktop_glfw.c"
-#elif defined(PLATFORM_DESKTOP_SDL)
-    #include "platforms/rcore_desktop_sdl.c"
-#elif defined(PLATFORM_DESKTOP_RGFW)
-    #include "platforms/rcore_desktop_rgfw.c"
-#elif defined(PLATFORM_WEB)
-    #include "platforms/rcore_web.c"
-#elif defined(PLATFORM_DRM)
-    #include "platforms/rcore_drm.c"
-#elif defined(PLATFORM_ANDROID)
-    #include "platforms/rcore_android.c"
-#else
-    // TODO: Include your custom platform backend!
-    // i.e software rendering backend or console backend!
-#endif
+//#if defined(PLATFORM_DESKTOP_GLFW)
+//    #include "platforms/rcore_desktop_glfw.c"
+//#elif defined(PLATFORM_DESKTOP_SDL)
+//    #include "platforms/rcore_desktop_sdl.c"
+//#elif defined(PLATFORM_DESKTOP_RGFW)
+//    #include "platforms/rcore_desktop_rgfw.c"
+//#elif defined(PLATFORM_WEB)
+//    #include "platforms/rcore_web.c"
+//#elif defined(PLATFORM_DRM)
+//    #include "platforms/rcore_drm.c"
+//#elif defined(PLATFORM_ANDROID)
+//    #include "platforms/rcore_android.c"
+//#else
+//    // TODO: Include your custom platform backend!
+//    // i.e software rendering backend or console backend!
+//#endif
+#include "platforms/rcore_null.c"
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition: Window and Graphics Device
@@ -578,7 +579,7 @@ const char *TextFormat(const char *text, ...);              // Formatting of tex
 //void DisableCursor(void)
 
 // Initialize window and OpenGL context
-void InitWindow(int width, int height, const char *title)
+void InitWindow(int width, int height, const char *title, void* loader)
 {
     TRACELOG(LOG_INFO, "Initializing raylib %s", RAYLIB_VERSION);
 
@@ -633,7 +634,7 @@ void InitWindow(int width, int height, const char *title)
     CORE.Window.screen.width = width;
     CORE.Window.screen.height = height;
     CORE.Window.eventWaiting = false;
-    CORE.Window.screenScale = MatrixIdentity();     // No draw scaling required by default
+    CORE.Window.screenScale = xMatrixIdentity();     // No draw scaling required by default
     if ((title != NULL) && (title[0] != 0)) CORE.Window.title = title;
 
     // Initialize global input state
@@ -647,6 +648,8 @@ void InitWindow(int width, int height, const char *title)
     //--------------------------------------------------------------
     InitPlatform();
     //--------------------------------------------------------------
+
+    rlLoadExtensions(loader);
 
     // Initialize rlgl default data (buffers and shaders)
     // NOTE: CORE.Window.currentFbo.width and CORE.Window.currentFbo.height not used, just stored as globals in rlgl
@@ -691,7 +694,7 @@ void InitWindow(int width, int height, const char *title)
 
     // Initialize random seed
     SetRandomSeed((unsigned int)time(NULL));
-
+    
     TRACELOG(LOG_INFO, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
 }
 
@@ -720,6 +723,17 @@ void CloseWindow(void)
 
     CORE.Window.ready = false;
     TRACELOG(LOG_INFO, "Window closed successfully");
+}
+
+void WindowSizeEvent(int w, int h)
+{
+    const int width = w;
+    const int height = h;
+    SetupViewport(width, height);
+    CORE.Window.screen.width = width;
+    CORE.Window.screen.height = height;
+    CORE.Window.currentFbo.width = width;
+    CORE.Window.currentFbo.height = height;
 }
 
 // Check if window has been initialized successfully
@@ -1229,8 +1243,8 @@ VrStereoConfig LoadVrStereoConfig(VrDeviceInfo device)
         float projOffset = 4.0f*lensShift;      // Scaled to projection space coordinates [-1..1]
         Matrix proj = MatrixPerspective(fovy, aspect, rlGetCullDistanceNear(), rlGetCullDistanceFar());
 
-        config.projection[0] = MatrixMultiply(proj, MatrixTranslate(projOffset, 0.0f, 0.0f));
-        config.projection[1] = MatrixMultiply(proj, MatrixTranslate(-projOffset, 0.0f, 0.0f));
+        config.projection[0] = xMatrixMultiply(proj, MatrixTranslate(projOffset, 0.0f, 0.0f));
+        config.projection[1] = xMatrixMultiply(proj, MatrixTranslate(-projOffset, 0.0f, 0.0f));
 
         // Compute camera transformation matrices
         // NOTE: Camera movement might seem more natural if we model the head
@@ -1466,7 +1480,7 @@ Ray GetScreenToWorldRayEx(Vector2 position, Camera camera, int width, int height
     // Calculate view matrix from camera look at
     Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
 
-    Matrix matProj = MatrixIdentity();
+    Matrix matProj = xMatrixIdentity();
 
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
@@ -1536,7 +1550,7 @@ Matrix GetCameraMatrix2D(Camera2D camera)
     Matrix matScale = MatrixScale(camera.zoom, camera.zoom, 1.0f);
     Matrix matTranslation = MatrixTranslate(camera.offset.x, camera.offset.y, 0.0f);
 
-    matTransform = MatrixMultiply(MatrixMultiply(matOrigin, MatrixMultiply(matScale, matRotation)), matTranslation);
+    matTransform = xMatrixMultiply(xMatrixMultiply(matOrigin, xMatrixMultiply(matScale, matRotation)), matTranslation);
 
     return matTransform;
 }
@@ -1553,7 +1567,7 @@ Vector2 GetWorldToScreen(Vector3 position, Camera camera)
 Vector2 GetWorldToScreenEx(Vector3 position, Camera camera, int width, int height)
 {
     // Calculate projection matrix (from perspective instead of frustum
-    Matrix matProj = MatrixIdentity();
+    Matrix matProj = xMatrixIdentity();
 
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
@@ -3295,7 +3309,8 @@ float GetGamepadAxisMovement(int gamepad, int axis)
     if ((gamepad < MAX_GAMEPADS) && CORE.Input.Gamepad.ready[gamepad] && (axis < MAX_GAMEPAD_AXIS)) {
         float movement = value < 0.0f ? CORE.Input.Gamepad.axisState[gamepad][axis] : fabsf(CORE.Input.Gamepad.axisState[gamepad][axis]);
 
-        if (movement > value) value = CORE.Input.Gamepad.axisState[gamepad][axis];
+        // 0.1f = GAMEPAD_AXIS_MINIMUM_DRIFT/DELTA
+        if (movement > value + 0.1f) value = CORE.Input.Gamepad.axisState[gamepad][axis];
     }
 
     return value;
@@ -3715,14 +3730,14 @@ static void ScanDirectoryFilesRecursively(const char *basePath, FilePathList *fi
                         break;
                     }
                 }
-                else
+                else 
                 {
                     if ((filter != NULL) && (TextFindIndex(filter, DIRECTORY_FILTER_TAG) >= 0))
                     {
                         strcpy(files->paths[files->count], path);
                         files->count++;
                     }
-
+                    
                     if (files->count >= files->capacity)
                     {
                         TRACELOG(LOG_WARNING, "FILEIO: Maximum filepath scan capacity reached (%i files)", files->capacity);

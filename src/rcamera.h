@@ -428,7 +428,7 @@ Matrix GetCameraProjectionMatrix(Camera *camera, float aspect)
         return MatrixOrtho(-right, right, -top, top, CAMERA_CULL_DISTANCE_NEAR, CAMERA_CULL_DISTANCE_FAR);
     }
 
-    return MatrixIdentity();
+    return xMatrixIdentity();
 }
 
 #if !defined(RCAMERA_STANDALONE)

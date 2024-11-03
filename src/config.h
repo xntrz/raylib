@@ -50,26 +50,26 @@
 // Mouse gestures are directly mapped like touches and processed by gestures system
 #define SUPPORT_MOUSE_GESTURES          1
 // Reconfigure standard input to receive key inputs, works with SSH connection.
-#define SUPPORT_SSH_KEYBOARD_RPI        1
+//#define SUPPORT_SSH_KEYBOARD_RPI        1
 // Setting a higher resolution can improve the accuracy of time-out intervals in wait functions.
 // However, it can also reduce overall system performance, because the thread scheduler switches tasks more often.
 #define SUPPORT_WINMM_HIGHRES_TIMER     1
 // Use busy wait loop for timing sync, if not defined, a high-resolution timer is set up and used
 //#define SUPPORT_BUSY_WAIT_LOOP          1
 // Use a partial-busy wait loop, in this case frame sleeps for most of the time, but then runs a busy loop at the end for accuracy
-#define SUPPORT_PARTIALBUSY_WAIT_LOOP    1
+//#define SUPPORT_PARTIALBUSY_WAIT_LOOP    1
 // Allow automatic screen capture of current screen pressing F12, defined in KeyCallback()
-#define SUPPORT_SCREEN_CAPTURE          1
+//#define SUPPORT_SCREEN_CAPTURE          1
 // Allow automatic gif recording of current screen pressing CTRL+F12, defined in KeyCallback()
-#define SUPPORT_GIF_RECORDING           1
+//#define SUPPORT_GIF_RECORDING           1
 // Support CompressData() and DecompressData() functions
 #define SUPPORT_COMPRESSION_API         1
 // Support automatic generated events, loading and recording of those events when required
-#define SUPPORT_AUTOMATION_EVENTS       1
+//#define SUPPORT_AUTOMATION_EVENTS       1
 // Support custom frame control, only for advanced users
 // By default EndDrawing() does this job: draws everything + SwapScreenBuffer() + manage frame timing + PollInputEvents()
 // Enabling this flag allows manual control of the frame processes, use at your own risk
-//#define SUPPORT_CUSTOM_FRAME_CONTROL    1
+#define SUPPORT_CUSTOM_FRAME_CONTROL    1
 
 // rcore: Configuration values
 //------------------------------------------------------------------------------------
@@ -100,8 +100,6 @@
 // Show OpenGL extensions and capabilities detailed logs on init
 //#define RLGL_SHOW_GL_DETAILS_INFO              1
 
-#define RL_SUPPORT_MESH_GPU_SKINNING           1      // GPU skinning, comment if your GPU does not support more than 8 VBOs
-
 //#define RL_DEFAULT_BATCH_BUFFER_ELEMENTS    4096    // Default internal render batch elements limits
 #define RL_DEFAULT_BATCH_BUFFERS               1      // Default number of batch buffers (multi-buffering)
 #define RL_DEFAULT_BATCH_DRAWCALLS           256      // Default number of batch draw calls (by state changes: mode, texture)
@@ -122,10 +120,15 @@
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_TANGENT     4
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_TEXCOORD2   5
 #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_INDICES     6
-#if defined(RL_SUPPORT_MESH_GPU_SKINNING)
-    #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS     7
-    #define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS 8
+
+
+#define RL_SUPPORT_MESH_GPU_SKINNING                   // Remove this if your GPU does not support more than 8 VBOs
+
+#ifdef RL_SUPPORT_MESH_GPU_SKINNING
+#define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEIDS     7
+#define RL_DEFAULT_SHADER_ATTRIB_LOCATION_BONEWEIGHTS 8
 #endif
+
 
 // Default shader vertex attribute names to set location points
 // NOTE: When a new shader is loaded, the following locations are tried to be set for convenience
@@ -262,7 +265,7 @@
 // Module: utils - Configuration Flags
 //------------------------------------------------------------------------------------
 // Standard file io library (stdio.h) included
-#define SUPPORT_STANDARD_FILEIO         1
+//#define SUPPORT_STANDARD_FILEIO         1
 // Show TRACELOG() output messages
 // NOTE: By default LOG_DEBUG traces not shown
 #define SUPPORT_TRACELOG                1

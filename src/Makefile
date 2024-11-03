@@ -71,11 +71,12 @@ RAYLIB_VERSION        = 5.5.0
 RAYLIB_API_VERSION    = 550
 
 # Define raylib source code path
-RAYLIB_SRC_PATH      ?= ../src
+RAYLIB_SRC_PATH      ?= ../src/$(PLATFORM)
 
 # Define output directory for compiled library, defaults to src directory
 # NOTE: If externally provided, make sure directory exists
 RAYLIB_RELEASE_PATH  ?= $(RAYLIB_SRC_PATH)
+
 
 # Library type used for raylib: STATIC (.a) or SHARED (.so/.dll)
 RAYLIB_LIBTYPE       ?= STATIC
@@ -184,8 +185,8 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_WEB)
         EMSDK_PATH         ?= C:/emsdk
         EMSCRIPTEN_PATH    ?= $(EMSDK_PATH)/upstream/emscripten
         CLANG_PATH         := $(EMSDK_PATH)/upstream/bin
-        PYTHON_PATH        := $(EMSDK_PATH)/python/3.9.2-nuget_64bit
-        NODE_PATH          := $(EMSDK_PATH)/node/20.18.0_64bit/bin
+        PYTHON_PATH        := $(EMSDK_PATH)/python/3.9.2-1_64bit
+        NODE_PATH          := $(EMSDK_PATH)/node/14.15.5_64bit/bin
         export PATH        := $(EMSDK_PATH);$(EMSCRIPTEN_PATH);$(CLANG_PATH);$(NODE_PATH);$(PYTHON_PATH);C:/raylib/MinGW/bin;$(PATH)
     endif
 endif
@@ -230,8 +231,8 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_ANDROID)
 endif
 
 # Define raylib graphics api depending on selected platform
-# NOTE: By default use OpenGL 3.3 on desktop platforms
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW)
+    # By default use OpenGL 3.3 on desktop platforms
     GRAPHICS ?= GRAPHICS_API_OPENGL_33
     #GRAPHICS = GRAPHICS_API_OPENGL_11      # Uncomment to use OpenGL 1.1
     #GRAPHICS = GRAPHICS_API_OPENGL_21      # Uncomment to use OpenGL 2.1
@@ -239,9 +240,11 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_GLFW)
     #GRAPHICS = GRAPHICS_API_OPENGL_ES2     # Uncomment to use OpenGL ES 2.0 (ANGLE)
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_SDL)
+    # By default use OpenGL 3.3 on desktop platform with SDL backend
     GRAPHICS ?= GRAPHICS_API_OPENGL_33
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_DESKTOP_RGFW)
+    # By default use OpenGL 3.3 on desktop platforms
     GRAPHICS ?= GRAPHICS_API_OPENGL_33
     #GRAPHICS = GRAPHICS_API_OPENGL_11      # Uncomment to use OpenGL 1.1
     #GRAPHICS = GRAPHICS_API_OPENGL_21      # Uncomment to use OpenGL 2.1
@@ -255,7 +258,7 @@ endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_WEB)
     # On HTML5 OpenGL ES 2.0 is used, emscripten translates it to WebGL 1.0
     GRAPHICS = GRAPHICS_API_OPENGL_ES2
-    #GRAPHICS = GRAPHICS_API_OPENGL_ES3
+    #GRAPHICS = GRAPHICS_API_OPENGL_ES3      # Uncomment to use ES3/WebGL2 (preliminary support).
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_ANDROID)
     # By default use OpenGL ES 2.0 on Android
@@ -380,7 +383,7 @@ ifeq ($(TARGET_PLATFORM),PLATFORM_WEB)
     ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
         CFLAGS += -sASSERTIONS=1 --profiling
     endif
-    #CFLAGS += -sGL_ENABLE_GET_PROC_ADDRESS
+    CFLAGS += -sGL_ENABLE_GET_PROC_ADDRESS -pthread -sUSE_PTHREADS=1
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_ANDROID)
     # Compiler flags for arquitecture
@@ -652,7 +655,13 @@ endif
 # Define processes to execute
 #------------------------------------------------------------------------------------------------
 # Default target entry
-all: raylib
+all: raylibp raylib
+
+raylibp: 
+	if not exist $(PLATFORM) mkdir $(PLATFORM) &
+	cd $(PLATFORM) & \
+	del lib$(RAYLIB_LIB_NAME).a & \
+	cd .. 
 
 # Compile raylib library
 # NOTE: Release directory is created if not exist
@@ -865,7 +874,6 @@ clean_shell_cmd: SHELL=cmd
 clean_shell_cmd:
 	del *.o /s
 	cd $(RAYLIB_RELEASE_PATH) & \
-	del lib$(RAYLIB_LIB_NAME).a /s & \
 	del lib$(RAYLIB_LIB_NAME)dll.a /s & \
 	del $(RAYLIB_LIB_NAME).dll /s & \
 	del raygui.c /s & \
