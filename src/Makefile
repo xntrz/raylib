@@ -72,11 +72,13 @@ RAYLIB_API_VERSION    = 550
 
 # Define raylib source code path
 RAYLIB_SRC_PATH      ?= ../src/$(PLATFORM)
+ifeq ($(PLATFORM), PLATFORM_ANDROID)
+	RAYLIB_SRC_PATH      = ../src/$(PLATFORM)/$(ANDROID_ARCH)
+endif
 
 # Define output directory for compiled library, defaults to src directory
 # NOTE: If externally provided, make sure directory exists
 RAYLIB_RELEASE_PATH  ?= $(RAYLIB_SRC_PATH)
-
 
 # Library type used for raylib: STATIC (.a) or SHARED (.so/.dll)
 RAYLIB_LIBTYPE       ?= STATIC
@@ -657,11 +659,21 @@ endif
 # Default target entry
 all: raylibp raylib
 
+ifeq ($(TARGET_PLATFORM),PLATFORM_ANDROID)
+raylibp: 
+	if not exist $(PLATFORM) mkdir $(PLATFORM) &
+	cd $(PLATFORM) & \
+	if not exist $(ANDROID_ARCH) mkdir $(ANDROID_ARCH) &
+	cd $(ANDROID_ARCH) & \
+	del lib$(RAYLIB_LIB_NAME).a & \
+	cd .. 
+else
 raylibp: 
 	if not exist $(PLATFORM) mkdir $(PLATFORM) &
 	cd $(PLATFORM) & \
 	del lib$(RAYLIB_LIB_NAME).a & \
 	cd .. 
+endif
 
 # Compile raylib library
 # NOTE: Release directory is created if not exist

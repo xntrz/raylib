@@ -1616,7 +1616,7 @@ RLAPI RayCollision GetRayCollisionQuad(Ray ray, Vector3 p1, Vector3 p2, Vector3 
 //------------------------------------------------------------------------------------
 // Audio Loading and Playing Functions (Module: audio)
 //------------------------------------------------------------------------------------
-typedef void (*AudioCallback)(void *bufferData, unsigned int frames);
+typedef void (*AudioCallback)(void *bufferData, unsigned int frames, void* param);
 
 // Audio device management functions
 RLAPI void InitAudioDevice(void);                                     // Initialize audio device and context
@@ -1688,12 +1688,12 @@ RLAPI void SetAudioStreamVolume(AudioStream stream, float volume);    // Set vol
 RLAPI void SetAudioStreamPitch(AudioStream stream, float pitch);      // Set pitch for audio stream (1.0 is base level)
 RLAPI void SetAudioStreamPan(AudioStream stream, float pan);          // Set pan for audio stream (0.5 is centered)
 RLAPI void SetAudioStreamBufferSizeDefault(int size);                 // Default size for new audio streams
-RLAPI void SetAudioStreamCallback(AudioStream stream, AudioCallback callback); // Audio thread callback to request new data
+RLAPI void SetAudioStreamCallback(AudioStream stream, AudioCallback callback, void* param); // Audio thread callback to request new data
 
-RLAPI void AttachAudioStreamProcessor(AudioStream stream, AudioCallback processor); // Attach audio stream processor to stream, receives the samples as 'float'
+RLAPI void AttachAudioStreamProcessor(AudioStream stream, AudioCallback processor, void* param); // Attach audio stream processor to stream, receives the samples as 'float'
 RLAPI void DetachAudioStreamProcessor(AudioStream stream, AudioCallback processor); // Detach audio stream processor from stream
 
-RLAPI void AttachAudioMixedProcessor(AudioCallback processor); // Attach audio stream processor to the entire audio pipeline, receives the samples as 'float'
+RLAPI void AttachAudioMixedProcessor(AudioCallback processor, void* param); // Attach audio stream processor to the entire audio pipeline, receives the samples as 'float'
 RLAPI void DetachAudioMixedProcessor(AudioCallback processor); // Detach audio stream processor from the entire audio pipeline
 
 #if defined(__cplusplus)
