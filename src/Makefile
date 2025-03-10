@@ -72,7 +72,10 @@ RAYLIB_VERSION        = 5.5.0
 RAYLIB_API_VERSION    = 550
 
 # Define raylib source code path
-RAYLIB_SRC_PATH      ?= ../src
+RAYLIB_SRC_PATH      ?= ../src/$(PLATFORM)
+ifeq ($(PLATFORM), PLATFORM_ANDROID)
+	RAYLIB_SRC_PATH      = ../src/$(PLATFORM)/$(ANDROID_ARCH)
+endif
 
 # Define output directory for compiled library, defaults to src directory
 # NOTE: If externally provided, make sure directory exists
@@ -386,6 +389,7 @@ ifeq ($(TARGET_PLATFORM),$(filter $(TARGET_PLATFORM),PLATFORM_WEB PLATFORM_WEB_R
     ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
         CFLAGS += --profiling
     endif
+	CFLAGS += -pthread -sUSE_PTHREADS=1
 endif
 ifeq ($(TARGET_PLATFORM),PLATFORM_ANDROID)
     # Compiler flags for arquitecture
@@ -662,7 +666,23 @@ endif
 # Define processes to execute
 #------------------------------------------------------------------------------------------------
 # Default target entry
-all: raylib
+all: raylibp raylib
+
+ifeq ($(TARGET_PLATFORM),PLATFORM_ANDROID)
+raylibp: 
+	if not exist $(PLATFORM) mkdir $(PLATFORM) &
+	cd $(PLATFORM) & \
+	if not exist $(ANDROID_ARCH) mkdir $(ANDROID_ARCH) &
+	cd $(ANDROID_ARCH) & \
+	del lib$(RAYLIB_LIB_NAME).a & \
+	cd .. 
+else
+raylibp: 
+	if not exist $(PLATFORM) mkdir $(PLATFORM) &
+	cd $(PLATFORM) & \
+	del lib$(RAYLIB_LIB_NAME).a & \
+	cd .. 
+endif
 
 # Compile raylib library
 # NOTE: Release directory is created if not exist
@@ -878,7 +898,6 @@ clean_shell_cmd: SHELL=cmd
 clean_shell_cmd:
 	del *.o /s
 	cd $(RAYLIB_RELEASE_PATH) & \
-	del lib$(RAYLIB_LIB_NAME).a /s & \
 	del lib$(RAYLIB_LIB_NAME)dll.a /s & \
 	del $(RAYLIB_LIB_NAME).dll /s & \
 	del raygui.c /s & \

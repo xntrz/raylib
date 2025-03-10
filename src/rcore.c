@@ -546,23 +546,7 @@ const char *TextFormat(const char *text, ...);              // Formatting of tex
 
 #endif // SUPPORT_CLIPBOARD_IMAGE
 
-// Include platform-specific submodules
-#if defined(PLATFORM_DESKTOP_GLFW)
-    #include "platforms/rcore_desktop_glfw.c"
-#elif defined(PLATFORM_DESKTOP_SDL)
-    #include "platforms/rcore_desktop_sdl.c"
-#elif (defined(PLATFORM_DESKTOP_RGFW) || defined(PLATFORM_WEB_RGFW))
-    #include "platforms/rcore_desktop_rgfw.c"
-#elif defined(PLATFORM_WEB)
-    #include "platforms/rcore_web.c"
-#elif defined(PLATFORM_DRM)
-    #include "platforms/rcore_drm.c"
-#elif defined(PLATFORM_ANDROID)
-    #include "platforms/rcore_android.c"
-#else
-    // TODO: Include your custom platform backend!
-    // i.e software rendering backend or console backend!
-#endif
+#include "platforms/rcore_null.c"
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition: Window and Graphics Device
@@ -762,6 +746,17 @@ void CloseWindow(void)
 
     CORE.Window.ready = false;
     TRACELOG(LOG_INFO, "Window closed successfully");
+}
+
+void WindowSizeEvent(int w, int h)
+{
+    const int width = w;
+    const int height = h;
+    SetupViewport(width, height);
+    CORE.Window.screen.width = width;
+    CORE.Window.screen.height = height;
+    CORE.Window.currentFbo.width = width;
+    CORE.Window.currentFbo.height = height;
 }
 
 // Check if window has been initialized successfully
